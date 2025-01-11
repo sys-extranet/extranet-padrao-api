@@ -3,7 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
-
+use Laravel\Passport\HasApiTokens;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,9 +11,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
+
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -53,19 +54,18 @@ class User extends Authenticatable
         ];
     }
 
-    protected static function boot()
+    protected static function boot(): void
     {
         parent::boot();
 
-        // Filter only clients actives
-        static::addGlobalScope('active', function (Builder $builder) {
-            $builder->where('active', true);
-        });
-
-        // Ordering for created_at
-        static::addGlobalScope('created', function (Builder $builder) {
-            $builder->orderBy('created_at');
-        });
+        static::addGlobalScopes([
+            'active' => function (Builder $builder) {
+                $builder->where('active', true);
+            },
+            'created' => function (Builder $builder) {
+                $builder->orderBy('created_at');
+            },
+        ]);
     }
 
     public function tasks(): HasMany
@@ -76,5 +76,10 @@ class User extends Authenticatable
     public function departament(): BelongsTo
     {
         return $this->belongsTo(Departament::class, 'setor_id');
+    }
+
+    public function unidade(): BelongsTo
+    {
+        return $this->belongsTo(Unidade::class, 'unidade_id');
     }
 }

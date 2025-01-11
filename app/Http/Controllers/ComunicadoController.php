@@ -8,6 +8,7 @@ use App\Models\Comunicado;
 use App\Models\ComunicadoFile;
 use App\Repositories\ComunicadoFileRepository;
 use App\Repositories\ComunicadoRepository;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -31,7 +32,7 @@ class ComunicadoController extends Controller
     public function index()
     {
         try {
-            $comunicados = $this->comunicadoRepository->all(['remetente']);
+            $comunicados = $this->comunicadoRepository->all(['remetente', 'files']);
             $response = new ApiResponse(Response::HTTP_OK, 'Listagem de comunicados realizada.');
             return $response->toResponse($comunicados);
         } catch (\Exception $e) {
@@ -49,15 +50,12 @@ class ComunicadoController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * @param ComunicadoRequest $request
+     * @return JsonResponse|Response
      */
-    public function store(Request $request)
+    public function store(ComunicadoRequest $request)
     {
         try {
-
-            //dd($request->all());
-            //exit;
-
             $comunicado = Comunicado::create([
                 'user_id' => $request['user_id'],
                 'titulo' => $request['titulo'],
@@ -93,17 +91,24 @@ class ComunicadoController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Comunicado $comunicado)
+    public function show($id)
     {
-        //
+        try {
+            $comunicado = $this->comunicadoRepository->find($id, ['files', 'remetente']);
+            $response = new ApiResponse(Response::HTTP_OK, 'Comunicado listado com sucesso.');
+            return $response->toResponse($comunicado);
+        } catch (\Exception $e) {
+            $response = new ApiResponse(Response::HTTP_INTERNAL_SERVER_ERROR, $e->getMessage());
+            return $response->toResponse([]);
+        }
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Comunicado $comunicado)
+    public function download($file)
     {
-        //
+        if ($file) {
+            return response()->download(storage_path('app/comunicados/anexos/'.$file));
+        }
+        return response()->json(['message' => 'File not found.'], 404);
     }
 
     /**

@@ -4,10 +4,10 @@
 ### Passo a passo
 Clone Repositório
 ```sh
-git clone https://github.com/ThiagolFPereira/setup-docker-laravel-11.git
+git clone https://github.com/sys-extranet/extranet-padrao-api
 ```
 ```sh
-cd setup-docker-laravel-11
+cd extranet-padrao-api
 ```
 
 Suba os containers do projeto
