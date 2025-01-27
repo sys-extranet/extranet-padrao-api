@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\UserUpdateRequest;
 use App\Http\Responses\ApiResponse;
 use App\Models\User;
+use App\Repositories\UnidadeUsuarioRepository;
 use App\Repositories\UserRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -15,10 +16,12 @@ use Symfony\Component\HttpFoundation\Response as ResponseAlias;
 class UserController extends Controller
 {
     private $userRepository;
+    private $unidadeUsuarioRepository;
 
-    public function __construct(UserRepository $userRepository)
+    public function __construct(UserRepository $userRepository, UnidadeUsuarioRepository $unidadeUsuarioRepository)
     {
         $this->userRepository = $userRepository;
+        $this->unidadeUsuarioRepository = $unidadeUsuarioRepository;
     }
 
     /**
@@ -27,7 +30,7 @@ class UserController extends Controller
     public function index()
     {
         try {
-            $users = $this->userRepository->all(['departament']);
+            $users = $this->userRepository->all(['departament', 'unidade']);
             $res = new ApiResponse(ResponseAlias::HTTP_OK, 'Listagem de usuários realizada com sucesso!');
             return $res->toResponse($users);
         } catch (\Exception $e) {
@@ -45,21 +48,13 @@ class UserController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
      * Display the specified resource.
      */
     public function show(int $id)
     {
         try{
-            $user = $this->userRepository->findOrFail($id);
-            $res = new ApiResponse(ResponseAlias::HTTP_OK, 'Usuário encontrado com sucesso!');
+            $user = $this->userRepository->find($id, ['departament', 'unidadeUsuario']);
+            $res = new ApiResponse(ResponseAlias::HTTP_OK, 'Usuario encontrado com sucesso!');
             return $res->toResponse($user);
 
         } catch (\Exception $e) {
@@ -81,7 +76,7 @@ class UserController extends Controller
      */
     public function update(UserUpdateRequest $request, int $id): JsonResponse
     {
-        try {
+        try { 
             $user = $this->userRepository->findOrFail($id);
 
             if ($request->hasFile('imagem_profile')) {
@@ -90,8 +85,19 @@ class UserController extends Controller
                 $request->merge($photoDetails);
             }
 
+            if ($request->has('unidade_id')) {
+                $unidadeUsuario = $this->unidadeUsuarioRepository->findByColumnFirst('user_id', $id);
+                
+                if ($unidadeUsuario) {
+                    $unidadeUsuario->update(['unidade_id' => $request->unidade_id]);
+                } else {
+                    $this->unidadeUsuarioRepository->save(['user_id' => $id, 'unidade_id' => $request->unidade_id]);
+                }
+                
+            }
+
             $user->update($request->all());
-            $response = new ApiResponse(ResponseAlias::HTTP_OK, 'Usuário atualizado com sucesso!');
+            $response = new ApiResponse(ResponseAlias::HTTP_OK, 'Usuario atualizado com sucesso!');
             $userUpdated = $this->userRepository->findOrFail($id);
             return $response->toResponse($userUpdated);
         } catch (\Exception $e) {

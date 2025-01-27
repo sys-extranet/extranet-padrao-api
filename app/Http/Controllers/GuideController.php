@@ -7,6 +7,7 @@ use App\Http\Responses\ApiResponse;
 use App\Models\Guide;
 use App\Models\Manual;
 use App\Repositories\GuideRepository;
+use App\Repositories\MenuRepository;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -14,23 +15,20 @@ class GuideController extends Controller
 {
     protected $guideRepository;
 
-    public function __construct(GuideRepository $guideRepository)
+    public function __construct(GuideRepository $guideRepository, MenuRepository $menuRepository)
     {
+        parent::__construct($menuRepository);
         $this->guideRepository = $guideRepository;
     }
 
     /**
      * Display a listing of the resource.
      */
-    public function index(GuideRequest $request)
+    public function index()
     {
         try {
-            if ($request->has('category_id') && !empty($request->category_id)) {
-                $guides = $this->guideRepository->findGuideByCategories($request->category_id);
-            } else {
-                $guides = $this->guideRepository->all();
-            }
-            $response = new ApiResponse(Response::HTTP_OK, 'Guides retrieved successfully.');
+            $guides = $this->guideRepository->getAllWithPaginate(10);
+            $response = new ApiResponse(Response::HTTP_OK, 'Listagem de guias realizada.', $this->menu);
             return $response->toResponse($guides);
         } catch (\Exception $e) {
             $response = new ApiResponse(Response::HTTP_INTERNAL_SERVER_ERROR, $e->getMessage());

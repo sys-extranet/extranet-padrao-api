@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -28,7 +30,8 @@ class User extends Authenticatable
         'phone',
         'photo',
         'path_image',
-        'isAdmin'
+        'isAdmin',
+        'setor_id',
     ];
 
     /**
@@ -78,8 +81,13 @@ class User extends Authenticatable
         return $this->belongsTo(Departament::class, 'setor_id');
     }
 
-    public function unidade(): BelongsTo
+    public function unidadeUsuario(): HasOne
     {
-        return $this->belongsTo(Unidade::class, 'unidade_id');
+        return $this->hasOne(UnidadeUsuario::class);
+    }
+
+    public function unidade(): HasOneThrough
+    {
+        return $this->hasOneThrough(Unidade::class, UnidadeUsuario::class, 'user_id', 'id', 'id', 'unidade_id');
     }
 }

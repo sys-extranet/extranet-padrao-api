@@ -14,9 +14,9 @@ return new class extends Migration
         Schema::create('comunicados', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users');
-            $table->string('departament_id')->nullable();
             $table->string('titulo');
             $table->text('texto');
+            $table->tinyText('tipo_acesso');
             $table->timestamps();
         });
     }

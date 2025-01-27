@@ -7,11 +7,13 @@ class ApiResponse implements Responsable
 {
     protected $code_response;
     protected $message;
+    protected $menu;
 
-    public function __construct($code_response, $message)
+    public function __construct($code_response, $message, $menu = null)
     {
         $this->code_response = $code_response;
         $this->message = $message;
+        $this->menu = $menu;
     }
 
     public function toResponse($response)
@@ -20,7 +22,8 @@ class ApiResponse implements Responsable
             return response()->json([
                 'data' => [
                     'code' => $this->code_response,
-                    'message' => $this->message
+                    'message' => $this->message,
+                    'menu' => $this->menu
                 ]
             ], $this->code_response);
         }
@@ -28,6 +31,7 @@ class ApiResponse implements Responsable
         return response()->json([
             'code' => $this->code_response,
             'message' => $this->message,
+            'menu' => $this->menu,
             'data' => $response
         ], $this->code_response);
     }

@@ -48,12 +48,24 @@ Route::middleware(['auth:api'])->group(function() {
         'tasks' => TaskController::class,
         'unidades' => UnidadeController::class,
         'departaments' => DepartamentController::class,
-        'comunicados' => ComunicadoController::class,
         'menus' => MenuController::class,
-        'guides' => GuideController::class,
         'guides-categories' => GuideCategoryController::class,
     ]);
+
+    Route::prefix('/guides')->group(function() {
+        Route::get('/', [GuideController::class, 'index'])->name('manuais');
+        Route::get('/{id}', [GuideController::class, 'show']);
+        Route::post('/', [GuideController::class, 'store']);
+        Route::post('/{id}', [GuideController::class, 'update']);
+        Route::delete('/{id}', [GuideController::class, 'destroy']);
+    });
+    
     Route::prefix('/comunicados')->group(function () {
+        Route::get('/', [ComunicadoController::class, 'index'])->name('comunicados');
+        Route::get('/filter', [ComunicadoController::class, 'filterComunicado'])->name('comunicados');
+        Route::get('/{id}', [ComunicadoController::class, 'show']);
+        Route::post('/', [ComunicadoController::class, 'store']);
+        Route::post('/{id}', [ComunicadoController::class, 'update']);
         Route::get('/download/{file}', [ComunicadoController::class, 'download'])->name('api.comunicados.download');
     });
 

@@ -45,23 +45,22 @@ class BaseRepository
         return $this->model->findOrFail($id);
     }
 
-    public function findByColumn(string $column, $value, array $relations = [])
+    public function findByColumn(string $column, $value, array $relations = [], array $columns = ['*'])
     {
         if($relations)
         {
-            return $this->model->with($relations)->where($column, $value)->get();
+            return $this->model->with($relations)->where($column, $value)->get($columns);
         }
-        return $this->model->where($column, $value)->get();
+        return $this->model->where($column, $value)->get($columns);
     }
 
-    public function findByColumnFirst(string $column, $value, array $relations = [])
+    public function findByColumnFirst(string $column, $value, array $relations = [], array $columns = ['*'])
     {
-
         if($relations)
         {
-            return $this->model->with($relations)->where($column, $value)->first();
+            return $this->model->with($relations)->where($column, $value)->first($columns);
         }
-        return $this->model->where($column, $value)->first();
+        return $this->model->where($column, $value)->first($columns);
     }
 
     public function findByColumns(array $columns, array $relations = [])

@@ -5,9 +5,12 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ComunicadoRequest;
 use App\Http\Responses\ApiResponse;
 use App\Models\Comunicado;
-use App\Models\ComunicadoFile;
+use App\Repositories\ComunicadoAcessoUnidadeRepository;
+use App\Repositories\ComunicadoAcessoUsuarioRepository;
 use App\Repositories\ComunicadoFileRepository;
 use App\Repositories\ComunicadoRepository;
+use App\Repositories\MenuRepository;
+use App\Services\ComunicadoService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -15,15 +18,15 @@ use Symfony\Component\HttpFoundation\Response;
 class ComunicadoController extends Controller
 {
     private $comunicadoRepository;
-    private $comunicadoFileRepository;
+    private $comunicadoService;
 
     public function __construct(
-        ComunicadoRepository $comunicadoRepository,
-        ComunicadoFileRepository $comunicadoFileRepository
+        MenuRepository $menuRepository,
+        ComunicadoService $comunicadoService
     )
     {
-        $this->comunicadoRepository = $comunicadoRepository;
-        $this->comunicadoFileRepository = $comunicadoFileRepository;
+        parent::__construct($menuRepository);
+        $this->comunicadoService = $comunicadoService;
     }
 
     /**
@@ -32,8 +35,8 @@ class ComunicadoController extends Controller
     public function index()
     {
         try {
-            $comunicados = $this->comunicadoRepository->all(['remetente', 'files']);
-            $response = new ApiResponse(Response::HTTP_OK, 'Listagem de comunicados realizada.');
+            $comunicados = $this->comunicadoService->getAllComunicados(10);
+            $response = new ApiResponse(Response::HTTP_OK, 'Listagem de comunicados realizada.', $this->menu);
             return $response->toResponse($comunicados);
         } catch (\Exception $e) {
             $response = new ApiResponse(Response::HTTP_INTERNAL_SERVER_ERROR, $e->getMessage());
@@ -41,12 +44,16 @@ class ComunicadoController extends Controller
         }
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function filterComunicado(ComunicadoRequest $request)
     {
-        //
+        try {
+            $comunicados = $this->comunicadoService->filterComunicados($request->all());
+            $response = new ApiResponse(Response::HTTP_OK, 'Listagem de comunicados realizada.', $this->menu);
+            return $response->toResponse($comunicados);
+        } catch (\Exception $e) {
+            $response = new ApiResponse(Response::HTTP_INTERNAL_SERVER_ERROR, $e->getMessage());
+            return $response->toResponse([]);
+        }
     }
 
     /**
@@ -56,30 +63,7 @@ class ComunicadoController extends Controller
     public function store(ComunicadoRequest $request)
     {
         try {
-            $comunicado = Comunicado::create([
-                'user_id' => $request['user_id'],
-                'titulo' => $request['titulo'],
-                'texto' => $request['texto'],
-                'tipo_acesso' => $request['tipo_acesso'],
-                'departament_id' => !empty($request['departament_id']) ? $request['departament_id'] : null,
-                'users_id' => !empty($request['users_id']) ? $request['users_id'] : null
-            ]);
-
-            if ($request->hasFile('anexos')) {
-                foreach ($request->file('anexos') as $file) {
-                    $fileName = $file->getClientOriginalName();
-                    $tempName = time() . '_' . $fileName;
-                    $pathFile = $file->storeAs('comunicados/anexos', $tempName);
-
-                    $this->comunicadoFileRepository->save([
-                        'comunicado_id' => $comunicado->id,
-                        'file_name' => $fileName,
-                        'temporary_file_name' => $tempName,
-                        'path_file' => $pathFile,
-                    ]);
-                }
-            }
-            $comunicadoCreated = $this->comunicadoRepository->find($comunicado->id, ['files']);
+            $comunicadoCreated = $this->comunicadoService->createComunicado($request->all());
             $response = new ApiResponse(Response::HTTP_OK, 'Comunicado cadastrado com sucesso.');
             return $response->toResponse($comunicadoCreated);
         } catch (\Exception $e) {
@@ -94,7 +78,7 @@ class ComunicadoController extends Controller
     public function show($id)
     {
         try {
-            $comunicado = $this->comunicadoRepository->find($id, ['files', 'remetente']);
+            $comunicado = $this->comunicadoService->getComunicadoById($id);
             $response = new ApiResponse(Response::HTTP_OK, 'Comunicado listado com sucesso.');
             return $response->toResponse($comunicado);
         } catch (\Exception $e) {
@@ -114,7 +98,7 @@ class ComunicadoController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Comunicado $comunicado)
+    public function update(ComunicadoRequest $request, int $id)
     {
         //
     }
@@ -125,7 +109,7 @@ class ComunicadoController extends Controller
     public function destroy($id)
     {
         try {
-            $comunicado = $this->comunicadoRepository->delete($id);
+            $comunicado = $this->comunicadoService->deleteComunicado($id);
             $response = new ApiResponse(Response::HTTP_OK, 'Comunicado removido com sucesso.');
             return $response->toResponse($comunicado);
         } catch (\Exception $e) {
